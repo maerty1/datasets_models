@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dataset Viewer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <style>
+        .image-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+        }
+        .image-item {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            overflow: hidden;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: calc(33.33% - 20px);
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .image-item img {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+        .image-item p {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .navigation {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .navigation button {
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Dataset Viewer</h1>
+    <div class="image-grid" id="image-grid">
+        {% for image_file in image_files %}
+            <div class="image-item">
+                <img src="{{ url_for('annotated_image', filename=image_file) }}" alt="{{ image_file }}" class="image">
+                <p>{{ image_file }}</p>
+            </div>
+        {% endfor %}
+    </div>
+    <div class="navigation">
+        <button onclick="navigate(-1)">Previous</button>
+        <button onclick="navigate(1)">Next</button>
+    </div>
+    <script>
+        var imageFiles = {{ image_files | tojson }};
+        var currentIndex = 0;
+        var imagesPerPage = 100;
+
+        function loadImages(startIndex) {
+            var imageGrid = document.getElementById('image-grid');
+            imageGrid.innerHTML = '';
+            for (var i = startIndex; i < startIndex + imagesPerPage && i < imageFiles.length; i++) {
+                var imageFile = imageFiles[i];
+                var imageItem = document.createElement('div');
+                imageItem.className = 'image-item';
+                var img = document.createElement('img');
+                img.src = "{{ url_for('annotated_image', filename='') }}" + imageFile;
+                img.alt = imageFile;
+                img.className = 'image';
+                var p = document.createElement('p');
+                p.textContent = imageFile;
+                imageItem.appendChild(img);
+                imageItem.appendChild(p);
+                imageGrid.appendChild(imageItem);
+            }
+        }
+
+        function navigate(direction) {
+            currentIndex += direction * imagesPerPage;
+            if (currentIndex < 0) currentIndex = 0;
+            if (currentIndex >= imageFiles.length) currentIndex = imageFiles.length - imagesPerPage;
+            loadImages(currentIndex);
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft') {
+                navigate(-1);
+            } else if (e.key === 'ArrowRight') {
+                navigate(1);
+            }
+        });
+
+        loadImages(currentIndex);
+    </script>
+</body>
+</html>
